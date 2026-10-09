@@ -59,7 +59,7 @@ summary{cursor:pointer;color:var(--text);font-weight:600}
 <details>
   <summary>怎么看这个清单</summary>
   <p><b>先勾「我的情况」</b>：对你这种情况不合适的商品会自动隐藏。<br>
-  <b>👑 首选</b>：每个小类里，隐藏不合适的之后排第一的 ⭐⭐。排序依次看：「자극없이 순해요」占比 → 1~2★ 差评占比 → 评论多 → 每 ml 便宜；占比都按评论数打折（评论少的往下压，同 Reddit/统计学常用的 Wilson 下限），所以 2 万条 96% 会排在 200 条 97% 前面。多款可选但只核了 1 款成分的不给 👑。意思是「按我们的标准最稳妥」，<b>不等于效果最好</b>。<br>
+  <b>👑 首选</b>：每个小类里，隐藏不合适的之后排第一的 ⭐⭐。排序依次看：「자극없이 순해요」占比 → 1~2★ 差评占比 → 评论多 → 每 ml 便宜；占比都按评论数打折（评论少的往下压，同 Reddit/统计学常用的 Wilson 下限），所以 2 万条 96% 会排在 200 条 97% 前面。多款可选但只核了 1 款成分的不给 👑。染发/烫发小类不评 👑（几乎都含强致敏染料，谈不上「稳妥」）。意思是「按我们的标准最稳妥」，<b>不等于效果最好</b>。<br>
   <b>⭐⭐ 口碑好·无硬伤</b>：没有对所有人都成立的成分硬伤，评论数够多、差评占比不高。<b>✅ 可以试</b>：评论还少。<b>— 差评偏多</b>：评论够多但 1~2★ 占比在最差的一成里。<b>?</b>：成分表可能不完整，没法判。<br>
   <b>⚠️ 备注</b>：只对某些人是问题，写明了是哪个成分（依据：AAD 美国皮肤科学会、欧盟 SCCS 等，见 RULES.md）。<b>组合装的赠品</b>单独列出。<br>
   买家投票（피부타입/피부고민/자극도…）是 올리브영 买家的统计，不是我们的判断。</p>
@@ -84,6 +84,7 @@ let me=[], cat='全部', sub='全部', q='';
 try { me = JSON.parse(localStorage.getItem('oy_me')||'[]').filter(v=>ME.includes(v)); } catch(e) {}
 const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // 2026-10-10 #46：比例按 Wilson 下限（95%）排，样本少的往下压——「最稳妥」= 分不清时偏向证据多的（Evan Miller / Reddit best 排序同法）；n 用评论数（投票人数拿不到）
+const NOCROWN = new Set(['헤어>염모제/펌']);   // 2026-10-10 #44：氧化染发剂几乎都含 PPD/PTD（SCCS 极强致敏），「最稳妥」标签会误导 → 本小类不评 👑
 const wilson = (p, n) => { if (p == null || !n) return 0; const z = 1.96; p /= 100; return (p + z*z/(2*n) - z*Math.sqrt(p*(1-p)/n + z*z/(4*n*n))) / (1 + z*z/n); };
 const key = x => [TR[x.tier[0]] ?? 4, -wilson(x.soft_pct, x.reviews), -wilson(x.low_pct == null ? null : 100 - x.low_pct, x.reviews), -x.reviews, x.per_ml ?? 1e9];
 const cmp = (a,b) => { const A=key(a), B=key(b); for (let i=0;i<A.length;i++) if (A[i]!==B[i]) return A[i]<B[i]?-1:1; return 0; };
@@ -103,7 +104,7 @@ function render(){
       words.every(w => terms(w).some(t => (x.name+' '+x.sub).toLowerCase().includes(t))));
   const xs = base.filter(x => !(x.aud||[]).some(a => me.includes(a))).sort((a,b) => a.sub.localeCompare(b.sub) || cmp(a,b));
   const crown = new Set(); const done = new Set();
-  for (const x of xs) if (!done.has(x.sub) && x.tier.startsWith('⭐⭐') && !x.variant_unverified) { crown.add(x.goodsNo); done.add(x.sub); }
+  for (const x of xs) if (!done.has(x.sub) && x.tier.startsWith('⭐⭐') && !x.variant_unverified && !NOCROWN.has(x.sub)) { crown.add(x.goodsNo); done.add(x.sub); }
   xs.sort((a,b) => (crown.has(b.goodsNo) - crown.has(a.goodsNo)));   // 每个小类的 👑 首选排最前（稳定排序，其余顺序不变）
   document.getElementById('count').textContent = `${xs.length} 款` + (me.length ? `（按「${me.join('·')}」隐藏了 ${base.length-xs.length} 款）` : '');
   document.getElementById('list').innerHTML = xs.length ? xs.slice(0, 400).map(x => `
